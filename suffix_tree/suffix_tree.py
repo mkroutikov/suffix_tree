@@ -57,7 +57,7 @@ class SuffixTree:
     
     def _get_id(self):
         self._id_seq += 1
-        return self._id_seq - 1
+        return self._id_seq
     
     def _register_edge(self, edge):
         self._edges[edge.parent][self.text[edge.offset]] = edge
@@ -150,7 +150,7 @@ class SuffixTree:
         for key in sorted(self._edges[root].keys()):
             edge = self._find_edge(root, key)
             print('\t' * level, self.edge_text(edge))
-            self.dump_tree(edge.id, level+1)
+            self.pretty_print(edge.id, level+1)
 
     def search(self, stream):
 
@@ -173,3 +173,23 @@ class SuffixTree:
             ii += 1
 
         return False
+    
+    def validate(self):
+        """Validates tree by traversing it and checking that all suffixes are present in the tree exactly once"""
+        
+        suffixes = collections.defaultdict(int)
+        def walk_tree(node=0, suffix=''):
+            
+            if len(self._edges[node]) == 0:  # leaf node
+                assert self.text[-len(suffix):] == suffix, suffix
+                suffixes[len(suffix)] += 1
+                return
+            
+            for edge in self._edges[node].values():
+                leg = self.edge_text(edge)
+                assert len(leg) > 0, edge
+                walk_tree(edge.id, suffix + leg)
+        
+        walk_tree()
+        for i in range(1, len(self.text)):
+            assert suffixes[i] == 1, i

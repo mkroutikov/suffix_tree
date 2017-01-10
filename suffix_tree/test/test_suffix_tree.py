@@ -14,6 +14,8 @@ class TestCst(unittest.TestCase):
         text = 'abc$'
 
         st = SuffixTree().build(text)
+        st.pretty_print()
+        st.validate()
 
         self.assertTrue(st.search('abc$'))
         self.assertTrue(st.search('bc$'))
@@ -26,6 +28,7 @@ class TestCst(unittest.TestCase):
         text = 'abcabxabd$'
 
         st = SuffixTree().build(text)
+        st.validate()
 
         self.assertTrue(st.search('abcabxabd$'))
         self.assertTrue(st.search('bcabxabd$'))
@@ -44,6 +47,7 @@ class TestCst(unittest.TestCase):
         text = 'ebebcbae$'
 
         st = SuffixTree().build(text)
+        st.validate()
 
         self.assertTrue(st.search('ebebcbae$'))
         self.assertTrue(st.search('bebcbae$'))
