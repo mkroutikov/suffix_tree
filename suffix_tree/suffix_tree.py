@@ -147,6 +147,7 @@ class SuffixTree:
             if cursor.length <= 0:  # explicit edge
                 if cursor.node > 0:
                     self._terminators[cursor.node].add(cursor.terminator)
+                parent_node = cursor.node
                 break
 
             edge = self._find_edge(cursor.node, self._texts[cursor.text_index][cursor.offset])
@@ -155,6 +156,7 @@ class SuffixTree:
             self._terminators[parent_node].add(cursor.terminator)
             
             if last_parent_node > 0:
+                assert last_parent_node != parent_node
                 self._nodes[last_parent_node] = parent_node  # add suffix link
             
             last_parent_node = parent_node
@@ -167,6 +169,7 @@ class SuffixTree:
             self._canonize(cursor)
         
         if last_parent_node > 0:
+            assert last_parent_node != parent_node
             self._nodes[last_parent_node] = parent_node
 
     def add_string(self, text):
@@ -279,4 +282,4 @@ class SuffixTree:
         walk_tree()
         for i in range(0, len(self._texts)):
             for j in range(1, len(self._texts[i])):
-                assert suffixes[i, j] == 1, (i, j)
+                assert suffixes[i, j] == 1, suffixes
