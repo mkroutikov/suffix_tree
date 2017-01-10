@@ -28,7 +28,7 @@ class TestCst(unittest.TestCase):
     def test02(self):
         text = 'abcabxabd$'
 
-        st = SuffixTree().build(text)
+        st = SuffixTree.build(text)
         st.pretty_print()
         print()
         st.validate()
@@ -49,7 +49,7 @@ class TestCst(unittest.TestCase):
     def test03(self):
         text = 'ebebcbae$'
 
-        st = SuffixTree().build(text)
+        st = SuffixTree.build(text)
         st.pretty_print()
         print()
         st.validate()
@@ -69,7 +69,7 @@ class TestCst(unittest.TestCase):
     def test04(self):
         text = 'ebebcbaebe'
 
-        st = SuffixTree().build(text)
+        st = SuffixTree.build(text)
         st.pretty_print()
         print()
         st.validate()
@@ -89,8 +89,8 @@ class TestCst(unittest.TestCase):
     
     def test05(self):
         st = SuffixTree()
-        st.build('abc')
-        st.build('def')
+        st.add_string('abc')
+        st.add_string('def')
         st.pretty_print()
         print()
         st.validate()
@@ -104,3 +104,34 @@ class TestCst(unittest.TestCase):
 
         self.assertFalse(st.search('ce'))
     
+    def test06(self):
+        st = SuffixTree()
+        st.add_string('abc')
+        st.add_string('ab')
+        st.pretty_print()
+        print()
+        st.validate()
+
+        self.assertTrue(st.search('abc'))
+        self.assertTrue(st.search('bc'))
+        self.assertTrue(st.search('c'))
+        self.assertTrue(st.search('ab'))
+        self.assertTrue(st.search('b'))
+
+        self.assertFalse(st.search('ce'))
+
+    def test07(self):
+        st = SuffixTree()
+        st.add_string('abc')
+        st.add_string('ab')
+        st.pretty_print()
+        print()
+        st.validate()
+
+        self.assertTrue(st.search('abc', exact=True))
+        self.assertFalse(st.search('bc', exact=True))
+        self.assertFalse(st.search('c', exact=True))
+        self.assertTrue(st.search('ab', exact=True))
+        self.assertFalse(st.search('b', exact=True))
+
+        self.assertFalse(st.search('ce'))

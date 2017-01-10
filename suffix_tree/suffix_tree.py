@@ -169,7 +169,7 @@ class SuffixTree:
         if last_parent_node > 0:
             self._nodes[last_parent_node] = parent_node
 
-    def build(self, text):
+    def add_string(self, text):
         
         text_index = len(self._texts)
         self._texts.append(text)
@@ -181,9 +181,17 @@ class SuffixTree:
             self._extend(cursor)
         
         self._terminate(cursor)
+        
+        return text_index
 
-        return self  # convenience, like this: tree = SuffixTree().build("abracadabra")
-
+    @classmethod
+    def build(cls, text):
+        """Convenience method to build simple (not generalized) SuffixTree"""
+        st = SuffixTree()
+        st.add_string(text)
+        
+        return st
+    
     def edge_text(self, edge):
         text = self._texts[edge.text_index]
         return text[edge.offset:edge.offset+edge.length]
@@ -193,31 +201,66 @@ class SuffixTree:
             edge = self._find_edge(root, key)
             print('\t' * level, self.edge_text(edge), self._terminators[edge.id] if self._terminators[edge.id] else  '')
             self.pretty_print(edge.id, level+1)
+    
+    def search(self, stream, exact=False):
+        """Returns True if stream is a suffix of one of the indexed strings"""
+        
+        for _ in self.search_all(stream, exact):
+            return True
+        
+        return False
 
-    def search(self, stream):
+    def search_all(self, stream, exact=False):
+        """Searches for all hits. Hits are reported by returning text index that generated match
+        
+        Example:
+        
+        ```
+        st = SuffixTree()
+        st.add_string("abca")  # string with index 0
+        st.add_string("bca")   # string with index 1
+        
+        for idx in st.search_all("bca"):
+            print(idx)
+        ```
+        > 0
+        > 1
+        
+        If :exact: flag is True, will report only complete matches sub-suffixes will be not reported.
+        
+        Example:
+        
+        ```
+        for idx in st.search_all("bca"):
+            print(idx)
+        ```
+        > 1
+        
+        """
 
         current = 0
         current_edge = None
         ii = 0
+        totlen = 0
 
         for x in stream:
             if current_edge is None or ii >= current_edge.length:
                 current_edge = self._find_edge(current, x)
                 if current_edge is None:
-                    return False  # nothing found
+                    return  # nothing found
                 ii = 0
                 current = current_edge.id
 
             if x != self._texts[current_edge.text_index][current_edge.offset + ii]:
-                return False
+                return
             ii += 1
+            totlen += 1
         
         if current_edge is not None:
             if ii == current_edge.length:
-                if self._terminators[current_edge.id]: 
-                    return True
-
-        return False
+                for t in self._terminators[current_edge.id]:
+                    if (not exact) or len(self._texts[t.text_index]) == totlen: 
+                        yield t.text_index
     
     def validate(self):
         """Validates tree by traversing it and checking that all suffixes are present in the tree exactly once"""

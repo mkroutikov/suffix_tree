@@ -15,7 +15,7 @@ from suffix_tree import SuffixTree
 
 st = SuffixTree()
 
-st.add_search_string('abracadabra')
+st.add_string('abracadabra')
 
 for match in st.search_stream('Who said "abracadabra"?'):
 	print('Matched at offset', match.offset)
