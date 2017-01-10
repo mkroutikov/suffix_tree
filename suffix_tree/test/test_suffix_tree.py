@@ -15,6 +15,7 @@ class TestCst(unittest.TestCase):
 
         st = SuffixTree().build(text)
         st.pretty_print()
+        print()
         st.validate()
 
         self.assertTrue(st.search('abc$'))
@@ -28,6 +29,8 @@ class TestCst(unittest.TestCase):
         text = 'abcabxabd$'
 
         st = SuffixTree().build(text)
+        st.pretty_print()
+        print()
         st.validate()
 
         self.assertTrue(st.search('abcabxabd$'))
@@ -47,6 +50,8 @@ class TestCst(unittest.TestCase):
         text = 'ebebcbae$'
 
         st = SuffixTree().build(text)
+        st.pretty_print()
+        print()
         st.validate()
 
         self.assertTrue(st.search('ebebcbae$'))
@@ -60,3 +65,42 @@ class TestCst(unittest.TestCase):
         self.assertTrue(st.search('$'))
 
         self.assertFalse(st.search('b$'))
+
+    def test04(self):
+        text = 'ebebcbaebe'
+
+        st = SuffixTree().build(text)
+        st.pretty_print()
+        print()
+        st.validate()
+
+        self.assertTrue(st.search('ebebcbaebe'))
+        self.assertTrue(st.search('bebcbaebe'))
+        self.assertTrue(st.search('ebcbaebe'))
+        self.assertTrue(st.search('bcbaebe'))
+        self.assertTrue(st.search('cbaebe'))
+        self.assertTrue(st.search('baebe'))
+        self.assertTrue(st.search('aebe'))
+        self.assertTrue(st.search('be'))
+        self.assertTrue(st.search('be'))
+        self.assertTrue(st.search('e'))
+
+        self.assertFalse(st.search('ce'))
+    
+    def test05(self):
+        st = SuffixTree()
+        st.build('abc')
+        st.build('def')
+        st.pretty_print()
+        print()
+        st.validate()
+
+        self.assertTrue(st.search('abc'))
+        self.assertTrue(st.search('bc'))
+        self.assertTrue(st.search('c'))
+        self.assertTrue(st.search('def'))
+        self.assertTrue(st.search('ef'))
+        self.assertTrue(st.search('f'))
+
+        self.assertFalse(st.search('ce'))
+    

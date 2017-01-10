@@ -7,13 +7,13 @@ import collections
 from types import SimpleNamespace
 
 
-class Edge(collections.namedtuple('_Edge', ['id', 'offset', 'length', 'parent'])):
+class Edge(collections.namedtuple('_Edge', ['id', 'offset', 'length', 'text_index', 'parent'])):
     """Represents edge in the suffix tree.
     It is "growing" from the parent edge
     Each edge has its unique id and stores the offset and length of substring it is representing
     """
     
-    def updated(self, offset=None, length=None, parent=None):
+    def updated(self, offset=None, length=None, text_index=None, parent=None):
         
         if offset is None:
             offset = self.offset
@@ -23,11 +23,14 @@ class Edge(collections.namedtuple('_Edge', ['id', 'offset', 'length', 'parent'])
         
         if parent is None:
             parent = self.parent
+        
+        if text_index is None:
+            text_index = self.text_index
 
-        return Edge(self.id, offset, length, parent)
+        return Edge(self.id, offset, length, text_index, parent)
 
 
-class Terminator(collections.namedtuple('_Terminator', ['offset', 'length'])):
+class Terminator(collections.namedtuple('_Terminator', ['text_index', 'length'])):
     """Represents a terminator symbol.
     This class is a lightweight one, but equals only to the same instance.
     Each string put into the Suffix Tree will get its own unique terminator.
@@ -37,10 +40,10 @@ class Terminator(collections.namedtuple('_Terminator', ['offset', 'length'])):
         return self is other
     
     def __hash__(self):
-        return hash(type(self)) + hash((self.offset, self.length))
+        return hash(type(self)) + hash((self.text_index, self.length))
 
     def __repr__(self):
-        return '$(offset=%s, length=%s)' % (self.offset, self.telength)
+        return '$(offset=%s, length=%s)' % (self.text_index, self.length)
 
 
 class SuffixTree:
@@ -60,7 +63,7 @@ class SuffixTree:
         return self._id_seq
     
     def _register_edge(self, edge):
-        self._edges[edge.parent][self.text[edge.offset]] = edge
+        self._edges[edge.parent][self._texts[edge.text_index][edge.offset]] = edge
     
     def _find_edge(self, node_id, token):
         return self._edges[node_id].get(token)
@@ -68,7 +71,7 @@ class SuffixTree:
     def _split_edge(self, edge, length):
         assert 0 < length < edge.length
         
-        new_edge = Edge(self._get_id(), edge.offset, length, edge.parent)
+        new_edge = Edge(self._get_id(), edge.offset, length, edge.text_index, edge.parent)
         self._register_edge(new_edge)  # this effectively removes the old edge as new_edge overrides edge
         
         edge = edge.updated(parent=new_edge.id, offset=edge.offset+length, length=edge.length-length)
@@ -76,80 +79,119 @@ class SuffixTree:
         
         return new_edge.id
 
-    def _canonize(self, suffix):
+    def _canonize(self, cursor):
         """suffix represents current search state in the tree (edge id, offset, and length).
         """
-        if suffix.length <= 0:
+        if cursor.length <= 0:
             return
         
-        edge = self._find_edge(suffix.node, self.text[suffix.offset])
-        while edge.length <= suffix.length:
+        edge = self._find_edge(cursor.node, self._texts[cursor.text_index][cursor.offset])
+        while edge.length < cursor.length:
             # need to move to the next edge
-            suffix.length -= edge.length
-            suffix.offset += edge.offset
-            suffix.node = edge.id
-            if suffix.length > 0:
-                edge = self._find_edge(suffix.node, self.token[suffix.offset])
-    
-    def _extend(self, pos, suffix):
+            cursor.length -= edge.length
+            cursor.offset += edge.length
+            cursor.node = edge.id
+            edge = self._find_edge(cursor.node, self.token[cursor.offset])
+
+        if edge.length == cursor.length:
+            cursor.length -= edge.length
+            cursor.offset += edge.length
+            cursor.node = edge.id
+            
+    def _extend(self, cursor):
         
         last_parent_node = -1  # for suffix links
         
         while True:
-            parent_node = suffix.node
             
-            if suffix.length <= 0:  # explicit edge
-                edge = self._find_edge(suffix.node, self.text[pos])
+            if cursor.length <= 0:  # explicit edge
+                assert cursor.length >= -1
+                edge = self._find_edge(cursor.node, self._texts[cursor.text_index][cursor.offset + cursor.length])
                 if edge is not None:
                     break
+                parent_node = cursor.node
             else:
-                edge = self._find_edge(suffix.node, self.text[suffix.offset])
-                if self.text[pos] == self.text[edge.offset + suffix.length]:
+                edge = self._find_edge(cursor.node, self._texts[cursor.text_index][cursor.offset])
+                if self._texts[cursor.text_index][cursor.offset + cursor.length] == self._texts[edge.text_index][edge.offset + cursor.length]:
                     break
-                parent_node = self._split_edge(edge, suffix.length)
-            
-            new_edge = Edge(self._get_id(), pos, len(self.text) - pos, parent_node)
+                parent_node = self._split_edge(edge, cursor.length)
+
+            new_edge = Edge(self._get_id(), cursor.offset + cursor.length, len(self._texts[cursor.text_index]) - cursor.offset - cursor.length, cursor.text_index, parent_node)  # length=None means "leaf node - till the end..."
             self._register_edge(new_edge)
+            self._terminators[new_edge.id].add(cursor.terminator)
             
             if last_parent_node > 0:
                 self._nodes[last_parent_node] = parent_node  # add suffix link
             
             last_parent_node = parent_node
             
-            if suffix.node == 0:  # already at root
-                suffix.offset += 1
-                suffix.length -= 1
+            if cursor.node == 0:  # already at root
+                cursor.offset += 1
+                cursor.length -= 1
             else:
-                suffix.node = self._nodes[suffix.node]
-            self._canonize(suffix)
+                cursor.node = self._nodes[cursor.node]
+            self._canonize(cursor)
         
         if last_parent_node > 0:
             self._nodes[last_parent_node] = parent_node
+
+        cursor.length += 1
+        self._canonize(cursor)
+
+    def _terminate(self, cursor):
         
-        suffix.length += 1
-        self._canonize(suffix)
-    
+        last_parent_node = -1  # for suffix links
+        
+        while True:
+            
+            if cursor.length <= 0:  # explicit edge
+                if cursor.node > 0:
+                    self._terminators[cursor.node].add(cursor.terminator)
+                break
+
+            edge = self._find_edge(cursor.node, self._texts[cursor.text_index][cursor.offset])
+            parent_node = self._split_edge(edge, cursor.length)
+            assert parent_node > 0
+            self._terminators[parent_node].add(cursor.terminator)
+            
+            if last_parent_node > 0:
+                self._nodes[last_parent_node] = parent_node  # add suffix link
+            
+            last_parent_node = parent_node
+            
+            if cursor.node == 0:  # already at root
+                cursor.offset += 1
+                cursor.length -= 1
+            else:
+                cursor.node = self._nodes[cursor.node]
+            self._canonize(cursor)
+        
+        if last_parent_node > 0:
+            self._nodes[last_parent_node] = parent_node
+
     def build(self, text):
         
-        if self._edges[0]:
-            raise RuntimeError('Already built')
-        
-        self.text = text
-        
-        suffix = SimpleNamespace(node=0, offset=0, length=0)
+        text_index = len(self._texts)
+        self._texts.append(text)
+        cursor = SimpleNamespace(node=0, offset=0, length=0, terminator=Terminator(text_index,0), text_index=text_index)
 
         for i in range(len(text)):
-            self._extend(i, suffix)
+            assert cursor.offset + cursor.length == i, repr(i) + ' ' + repr(cursor)
+            assert cursor.length >= 0
+            self._extend(cursor)
+        
+        self._terminate(cursor)
 
-        return self  # convenience, like this: tree = SuffixTree("abracadabra").build()
+        return self  # convenience, like this: tree = SuffixTree().build("abracadabra")
 
     def edge_text(self, edge):
-        return self.text[edge.offset:edge.offset+edge.length]
+        text = self._texts[edge.text_index]
+        return text[edge.offset:edge.offset+edge.length]
 
     def pretty_print(self, root=0, level=0):
         for key in sorted(self._edges[root].keys()):
             edge = self._find_edge(root, key)
-            print('\t' * level, self.edge_text(edge))
+            print('\t' * level, self.edge_text(edge), self._terminators[edge.id] if self._terminators[edge.id] else  '')
             self.pretty_print(edge.id, level+1)
 
     def search(self, stream):
@@ -166,11 +208,14 @@ class SuffixTree:
                 ii = 0
                 current = current_edge.id
 
-            if x != self.text[current_edge.offset + ii]:
+            if x != self._texts[current_edge.text_index][current_edge.offset + ii]:
                 return False
-            elif x == '$':
-                return True
             ii += 1
+        
+        if current_edge is not None:
+            if ii == current_edge.length:
+                if self._terminators[current_edge.id]: 
+                    return True
 
         return False
     
@@ -179,17 +224,17 @@ class SuffixTree:
         
         suffixes = collections.defaultdict(int)
         def walk_tree(node=0, suffix=''):
-            
-            if len(self._edges[node]) == 0:  # leaf node
-                assert self.text[-len(suffix):] == suffix, suffix
-                suffixes[len(suffix)] += 1
-                return
+            for term in self._terminators[node]:  # leaf node
+                text = self._texts[term.text_index]
+                assert text[-len(suffix):] == suffix, repr(suffix) + ' | ' + repr(text)
+                suffixes[term.text_index, len(suffix)] += 1
             
             for edge in self._edges[node].values():
                 leg = self.edge_text(edge)
                 assert len(leg) > 0, edge
-                walk_tree(edge.id, suffix + leg)
+                walk_tree(edge.id, suffix+leg)
         
         walk_tree()
-        for i in range(1, len(self.text)):
-            assert suffixes[i] == 1, i
+        for i in range(0, len(self._texts)):
+            for j in range(1, len(self._texts[i])):
+                assert suffixes[i, j] == 1, (i, j)
