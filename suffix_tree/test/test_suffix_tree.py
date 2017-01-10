@@ -18,12 +18,12 @@ class TestCst(unittest.TestCase):
         print()
         st.validate()
 
-        self.assertTrue(st.search('abc$'))
-        self.assertTrue(st.search('bc$'))
-        self.assertTrue(st.search('c$'))
-        self.assertTrue(st.search('$'))
+        self.assertTrue(st.match('abc$'))
+        self.assertTrue(st.match('bc$'))
+        self.assertTrue(st.match('c$'))
+        self.assertTrue(st.match('$'))
 
-        self.assertFalse(st.search('b$'))
+        self.assertFalse(st.match('b$'))
 
     def test02(self):
         text = 'abcabxabd$'
@@ -33,18 +33,18 @@ class TestCst(unittest.TestCase):
         print()
         st.validate()
 
-        self.assertTrue(st.search('abcabxabd$'))
-        self.assertTrue(st.search('bcabxabd$'))
-        self.assertTrue(st.search('cabxabd$'))
-        self.assertTrue(st.search('abxabd$'))
-        self.assertTrue(st.search('bxabd$'))
-        self.assertTrue(st.search('xabd$'))
-        self.assertTrue(st.search('abd$'))
-        self.assertTrue(st.search('bd$'))
-        self.assertTrue(st.search('d$'))
-        self.assertTrue(st.search('$'))
+        self.assertTrue(st.match('abcabxabd$'))
+        self.assertTrue(st.match('bcabxabd$'))
+        self.assertTrue(st.match('cabxabd$'))
+        self.assertTrue(st.match('abxabd$'))
+        self.assertTrue(st.match('bxabd$'))
+        self.assertTrue(st.match('xabd$'))
+        self.assertTrue(st.match('abd$'))
+        self.assertTrue(st.match('bd$'))
+        self.assertTrue(st.match('d$'))
+        self.assertTrue(st.match('$'))
 
-        self.assertFalse(st.search('b$'))
+        self.assertFalse(st.match('b$'))
 
     def test03(self):
         text = 'ebebcbae$'
@@ -54,17 +54,17 @@ class TestCst(unittest.TestCase):
         print()
         st.validate()
 
-        self.assertTrue(st.search('ebebcbae$'))
-        self.assertTrue(st.search('bebcbae$'))
-        self.assertTrue(st.search('ebcbae$'))
-        self.assertTrue(st.search('bcbae$'))
-        self.assertTrue(st.search('cbae$'))
-        self.assertTrue(st.search('bae$'))
-        self.assertTrue(st.search('ae$'))
-        self.assertTrue(st.search('e$'))
-        self.assertTrue(st.search('$'))
+        self.assertTrue(st.match('ebebcbae$'))
+        self.assertTrue(st.match('bebcbae$'))
+        self.assertTrue(st.match('ebcbae$'))
+        self.assertTrue(st.match('bcbae$'))
+        self.assertTrue(st.match('cbae$'))
+        self.assertTrue(st.match('bae$'))
+        self.assertTrue(st.match('ae$'))
+        self.assertTrue(st.match('e$'))
+        self.assertTrue(st.match('$'))
 
-        self.assertFalse(st.search('b$'))
+        self.assertFalse(st.match('b$'))
 
     def test04(self):
         text = 'ebebcbaebe'
@@ -74,18 +74,18 @@ class TestCst(unittest.TestCase):
         print()
         st.validate()
 
-        self.assertTrue(st.search('ebebcbaebe'))
-        self.assertTrue(st.search('bebcbaebe'))
-        self.assertTrue(st.search('ebcbaebe'))
-        self.assertTrue(st.search('bcbaebe'))
-        self.assertTrue(st.search('cbaebe'))
-        self.assertTrue(st.search('baebe'))
-        self.assertTrue(st.search('aebe'))
-        self.assertTrue(st.search('be'))
-        self.assertTrue(st.search('be'))
-        self.assertTrue(st.search('e'))
+        self.assertTrue(st.match('ebebcbaebe'))
+        self.assertTrue(st.match('bebcbaebe'))
+        self.assertTrue(st.match('ebcbaebe'))
+        self.assertTrue(st.match('bcbaebe'))
+        self.assertTrue(st.match('cbaebe'))
+        self.assertTrue(st.match('baebe'))
+        self.assertTrue(st.match('aebe'))
+        self.assertTrue(st.match('be'))
+        self.assertTrue(st.match('be'))
+        self.assertTrue(st.match('e'))
 
-        self.assertFalse(st.search('ce'))
+        self.assertFalse(st.match('ce'))
     
     def test05(self):
         st = SuffixTree()
@@ -95,14 +95,14 @@ class TestCst(unittest.TestCase):
         print()
         st.validate()
 
-        self.assertTrue(st.search('abc'))
-        self.assertTrue(st.search('bc'))
-        self.assertTrue(st.search('c'))
-        self.assertTrue(st.search('def'))
-        self.assertTrue(st.search('ef'))
-        self.assertTrue(st.search('f'))
+        self.assertTrue(st.match('abc'))
+        self.assertTrue(st.match('bc'))
+        self.assertTrue(st.match('c'))
+        self.assertTrue(st.match('def'))
+        self.assertTrue(st.match('ef'))
+        self.assertTrue(st.match('f'))
 
-        self.assertFalse(st.search('ce'))
+        self.assertFalse(st.match('ce'))
     
     def test06(self):
         st = SuffixTree()
@@ -112,13 +112,13 @@ class TestCst(unittest.TestCase):
         print()
         st.validate()
 
-        self.assertTrue(st.search('abc'))
-        self.assertTrue(st.search('bc'))
-        self.assertTrue(st.search('c'))
-        self.assertTrue(st.search('ab'))
-        self.assertTrue(st.search('b'))
+        self.assertTrue(st.match('abc'))
+        self.assertTrue(st.match('bc'))
+        self.assertTrue(st.match('c'))
+        self.assertTrue(st.match('ab'))
+        self.assertTrue(st.match('b'))
 
-        self.assertFalse(st.search('ce'))
+        self.assertFalse(st.match('ce'))
 
     def test07(self):
         st = SuffixTree()
@@ -128,10 +128,10 @@ class TestCst(unittest.TestCase):
         print()
         st.validate()
 
-        self.assertTrue(st.search('abc', exact=True))
-        self.assertFalse(st.search('bc', exact=True))
-        self.assertFalse(st.search('c', exact=True))
-        self.assertTrue(st.search('ab', exact=True))
-        self.assertFalse(st.search('b', exact=True))
+        self.assertTrue(st.match('abc', exact=True))
+        self.assertFalse(st.match('bc', exact=True))
+        self.assertFalse(st.match('c', exact=True))
+        self.assertTrue(st.match('ab', exact=True))
+        self.assertFalse(st.match('b', exact=True))
 
-        self.assertFalse(st.search('ce'))
+        self.assertFalse(st.match('ce'))

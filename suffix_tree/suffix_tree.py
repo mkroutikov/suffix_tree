@@ -202,15 +202,15 @@ class SuffixTree:
             print('\t' * level, self.edge_text(edge), self._terminators[edge.id] if self._terminators[edge.id] else  '')
             self.pretty_print(edge.id, level+1)
     
-    def search(self, stream, exact=False):
+    def match(self, stream, exact=False):
         """Returns True if stream is a suffix of one of the indexed strings"""
         
-        for _ in self.search_all(stream, exact):
+        for _ in self.match_all(stream, exact):
             return True
         
         return False
 
-    def search_all(self, stream, exact=False):
+    def match_all(self, stream, exact=False):
         """Searches for all hits. Hits are reported by returning text index that generated match
         
         Example:
@@ -220,7 +220,7 @@ class SuffixTree:
         st.add_string("abca")  # string with index 0
         st.add_string("bca")   # string with index 1
         
-        for idx in st.search_all("bca"):
+        for idx in st.match_all("bca"):
             print(idx)
         ```
         > 0
@@ -231,13 +231,12 @@ class SuffixTree:
         Example:
         
         ```
-        for idx in st.search_all("bca"):
+        for idx in st.match_all("bca"):
             print(idx)
         ```
         > 1
         
         """
-
         current = 0
         current_edge = None
         ii = 0
@@ -261,7 +260,7 @@ class SuffixTree:
                 for t in self._terminators[current_edge.id]:
                     if (not exact) or len(self._texts[t.text_index]) == totlen: 
                         yield t.text_index
-    
+
     def validate(self):
         """Validates tree by traversing it and checking that all suffixes are present in the tree exactly once"""
         
